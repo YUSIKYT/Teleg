@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Pro: Gold & Accounts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --tg-blue: #0088cc;
+            --tg-bg: #ffffff;
+            --tg-secondary-bg: #f1f1f4;
+            --tg-header-bg: rgba(255, 255, 255, 0.9);
+            --tg-text: #000000;
+            --tg-text-secondary: #8e8e93;
+            --tg-sent-msg: #effdde;
+            --tg-received-msg: #ffffff;
+            --tg-border: #e5e5ea;
+            --tg-chat-bg: #e7ebf0;
+            --premium-gold: linear-gradient(45deg, #d4af37, #f9f295, #b8860b, #f9f295, #d4af37);
+        }
+
+        [data-theme="dark"] {
+            --tg-bg: #1c1c1d;
+            --tg-secondary-bg: #000000;
+            --tg-header-bg: rgba(28, 28, 29, 0.9);
+            --tg-text: #ffffff;
+            --tg-text-secondary: #98989d;
+            --tg-sent-msg: #2b5278;
+            --tg-received-msg: #2c2c2e;
+            --tg-border: #38383a;
+            --tg-chat-bg: #0f0f0f;
+        }
+
+        /* Gold Interface Theme */
+        [data-gold="true"] {
+            --tg-blue: #b8860b;
+            --tg-bg: #15130d;
+            --tg-secondary-bg: #000000;
+            --tg-header-bg: rgba(34, 29, 13, 0.95);
+            --tg-text: #f9f295;
+            --tg-text-secondary: #d4af37;
+            --tg-sent-msg: #d4af37;
+            --tg-received-msg: #2a240d;
+            --tg-border: #d4af37;
+            --tg-chat-bg: #0a0904;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background-color: #000;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            background: var(--tg-bg);
+            color: var(--tg-text);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .page {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            background: var(--tg-bg);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-hidden-right { transform: translateX(100%); opacity: 0; pointer-events: none; }
+        .page-hidden-left { transform: translateX(-30%); opacity: 0; pointer-events: none; }
+        .page-active { transform: translateX(0); opacity: 1; z-index: 20; }
+
+        .ios-header {
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            background: var(--tg-header-bg);
+            border-bottom: 1px solid var(--tg-border);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 64px;
+        }
+
+        .premium-border {
+            position: relative;
+            padding: 4px;
+            background: var(--premium-gold);
+            border-radius: 50%;
+            background-size: 300% 300%;
+            animation: premiumAnim 4s ease infinite;
+        }
+
+        @keyframes premiumAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .gold-text {
+            background: var(--premium-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .list-item {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--tg-border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .list-item:active { background: rgba(184, 134, 11, 0.1); }
+
+        .bottom-nav {
+            height: 70px;
+            border-top: 1px solid var(--tg-border);
+            display: flex;
+            background: var(--tg-header-bg);
+            backdrop-filter: blur(20px);
+        }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--tg-text-secondary); cursor: pointer; }
+        .nav-item.active { color: var(--tg-blue); }
+
+        .switch-container {
+            width: 52px; height: 32px; background: #e9e9eb; border-radius: 16px; position: relative; cursor: pointer; transition: 0.3s;
+        }
+        .switch-container.active { background: #34c759; }
+        .switch-handle { width: 28px; height: 28px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .switch-container.active .switch-handle { left: 22px; }
+
+        .chat-wallpaper {
+            background-color: var(--tg-chat-bg);
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-size: 540px;
+            flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px;
+            scroll-behavior: smooth;
+        }
+
+        .msg-bubble { max-width: 75%; padding: 10px 16px; border-radius: 18px; font-size: 16px; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg-sent { background: var(--tg-sent-msg); align-self: flex-end; border-bottom-right-radius: 4px; color: #000; }
+        .msg-received { background: var(--tg-received-msg); align-self: flex-start; border-bottom-left-radius: 4px; color: var(--tg-text); }
+        
+        #toast { pointer-events: none; transform: translateX(-50%) translateY(20px); transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .premium-glow {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+    </style>
+</head>
+<body data-gold="false">
+
+<div id="app-container">
+    <div id="toast" class="absolute bottom-28 left-1/2 bg-zinc-800 text-white px-6 py-3 rounded-full text-sm opacity-0 z-[10000] shadow-2xl"></div>
+
+    <!-- PAGE: AUTH -->
+    <div id="page-auth" class="page page-active p-8 flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-zinc-900 dark:to-black">
+        <div class="w-32 h-32 bg-[#0088cc] rounded-[40px] flex items-center justify-center mb-10 shadow-2xl animate-bounce">
+            <i class="fa-solid fa-paper-plane text-6xl text-white"></i>
+        </div>
+        <h1 class="text-4xl font-black mb-8">Telegram Pro</h1>
+        
+        <div class="w-full max-w-sm space-y-4">
+            <input id="auth-name" type="text" placeholder="Имя" class="w-full p-5 bg-white dark:bg-zinc-800 rounded-2xl outline-none shadow-sm border border-gray-100 dark:border-zinc-700">
+            <div class="flex gap-2">
+                <input id="auth-id" type="text" placeholder="Уникальный ID" class="flex-1 p-5 bg-white dark:bg-zinc-800 rounded-2xl outline-none shadow-sm border border-gray-100 dark:border-zinc-700">
+                <button onclick="app.generateRandomID()" class="bg-blue-100 dark:bg-zinc-700 text-blue-600 p-5 rounded-2xl active:scale-90 transition-transform"><i class="fa-solid fa-wand-magic"></i></button>
+            </div>
+            <button onclick="app.createAccount()" class="w-full bg-[#0088cc] text-white p-5 rounded-2xl font-black text-xl shadow-xl active:scale-95 transition-all">Создать аккаунт</button>
+        </div>
+
+        <div class="w-full max-w-sm mt-10">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Доступные аккаунты</h3>
+            <div id="auth-account-list" class="space-y-2 overflow-y-auto max-h-48"></div>
+        </div>
+    </div>
+
+    <!-- PAGE: MAIN -->
+    <div id="page-main" class="page page-hidden-right">
+        <header class="ios-header">
+            <button onclick="ui.navigate('page-settings')" class="text-[#0088cc] font-bold">Изм.</button>
+            <h2 class="font-bold text-lg">Чаты</h2>
+            <button onclick="ui.navigate('page-search')" class="text-[#0088cc]"><i class="fa-solid fa-magnifying-glass text-xl"></i></button>
+        </header>
+        <div class="flex-1 overflow-y-auto">
+            <div class="list-item" onclick="ui.openChat('saved')">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl shadow-lg"><i class="fa-solid fa-bookmark"></i></div>
+                <div class="flex-1">
+                    <div class="font-bold text-lg">Избранное</div>
+                    <div class="text-sm opacity-50">Личные заметки</div>
+                </div>
+            </div>
+            <div id="dynamic-chats"></div>
+        </div>
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="ui.navigate('page-search')"><i class="fa-solid fa-circle-user text-2xl"></i><span class="text-[10px] mt-1 font-bold">Контакты</span></div>
+            <div class="nav-item active"><i class="fa-solid fa-comment text-2xl"></i><span class="text-[10px] mt-1 font-bold">Чаты</span></div>
+            <div class="nav-item" onclick="ui.navigate('page-settings')"><i class="fa-solid fa-gear text-2xl"></i><span class="text-[10px] mt-1 font-bold">Настройки</span></div>
+        </nav>
+    </div>
+
+    <!-- PAGE: SEARCH -->
+    <div id="page-search" class="page page-hidden-right">
+        <header class="ios-header">
+            <button onclick="ui.back()" class="text-[#0088cc]"><i class="fa-solid fa-chevron-left text-xl"></i></button>
+            <h2 class="font-bold">Поиск</h2>
+            <div class="w-10"></div>
+        </header>
+        <div class="p-4 border-b border-[var(--tg-border)]">
+            <input id="global-search-input" type="text" placeholder="Поиск по ID..." class="w-full p-4 bg-gray-100 dark:bg-zinc-800 rounded-2xl outline-none" oninput="app.searchUsers()">
+        </div>
+        <div id="search-results" class="flex-1 overflow-y-auto"></div>
+    </div>
+
+    <!-- PAGE: CHAT -->
+    <div id="page-chat" class="page page-hidden-right">
+        <header class="ios-header">
+            <button onclick="ui.back()" class="text-[#0088cc]"><i class="fa-solid fa-chevron-left text-xl"></i></button>
+            <div class="flex flex-col items-center">
+                <span id="chat-user-name" class="font-bold">Имя</span>
+                <span class="text-[10px] text-blue-500 font-bold animate-pulse">в сети</span>
+            </div>
+            <div id="chat-user-avatar" class="w-11 h-11 rounded-full overflow-hidden shadow-md"></div>
+        </header>
+        <div id="chat-messages" class="chat-wallpaper"></div>
+        <div class="p-3 bg-[var(--tg-bg)] border-t border-[var(--tg-border)] flex items-center gap-4">
+            <input id="chat-input" type="text" placeholder="Сообщение" 
+                class="flex-1 bg-gray-100 dark:bg-zinc-800 p-4 rounded-3xl outline-none text-lg transition-all focus:ring-2 focus:ring-[#0088cc]"
+                onkeypress="if(event.key==='Enter') app.sendText()">
+            <button onmousedown="event.preventDefault()" onclick="app.sendText()" 
+                class="bg-[#0088cc] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform">
+                <i class="fa-solid fa-arrow-up text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- PAGE: SETTINGS -->
+    <div id="page-settings" class="page page-hidden-right bg-[var(--tg-secondary-bg)]">
+        <header class="ios-header !bg-transparent !border-none">
+            <button onclick="ui.back()" class="text-[#0088cc] font-bold">Назад</button>
+            <h2 class="font-bold">Настройки</h2>
+            <button onclick="app.logout()" class="text-red-500 font-bold">Выйти</button>
+        </header>
+        <div class="flex-1 overflow-y-auto pb-10">
+            <!-- User Info Card -->
+            <div class="bg-[var(--tg-bg)] p-10 flex flex-col items-center mb-4 shadow-sm">
+                <div id="settings-avatar-wrap" class="w-32 h-32 mb-6"></div>
+                <h3 id="settings-name" class="text-3xl font-black"></h3>
+                <p id="settings-id" class="text-blue-500 font-bold mt-2 text-lg"></p>
+                <div id="premium-badge-container" class="mt-4"></div>
+            </div>
+
+            <!-- Account Switcher Section -->
+            <div class="px-6 mb-3 text-[12px] font-bold text-gray-400 uppercase tracking-widest flex justify-between">
+                <span>Ваши Аккаунты</span>
+                <span class="text-blue-500" onclick="ui.navigate('page-auth')">Добавить</span>
+            </div>
+            <div id="settings-account-list" class="bg-[var(--tg-bg)] border-y border-[var(--tg-border)] mb-6"></div>
+
+            <!-- Premium Feature Section -->
+            <div class="px-6 mb-3 text-[12px] font-bold text-gray-400 uppercase tracking-widest">Premium Центр</div>
+            <div class="bg-[var(--tg-bg)] border-y border-[var(--tg-border)] mb-6">
+                <div class="list-item" id="premium-buy-btn" onclick="app.buyPremium()">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <div class="flex-1 font-black text-lg gold-text">Telegram Premium</div>
+                    <div id="premium-status-text" class="text-sm font-bold text-gray-300">Купить</div>
+                </div>
+                
+                <!-- Premium Only Features -->
+                <div id="gold-interface-item" class="hidden">
+                    <div class="list-item" onclick="app.toggleGoldMode()">
+                        <i class="fa-solid fa-crown text-yellow-500 w-8 text-2xl"></i>
+                        <div class="flex-1 font-bold text-lg">ЗОЛОТОЙ ИНТЕРФЕЙС</div>
+                        <div id="gold-switch" class="switch-container">
+                            <div class="switch-handle"></div>
+                        </div>
+                    </div>
+                    <div class="list-item">
+                        <i class="fa-solid fa-bolt text-yellow-400 w-8 text-2xl"></i>
+                        <div class="flex-1 font-bold text-lg">Приоритетная скорость</div>
+                        <span class="text-[10px] font-bold text-green-500">MAX</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 mb-3 text-[12px] font-bold text-gray-400 uppercase tracking-widest">Оформление</div>
+            <div class="bg-[var(--tg-bg)] border-y border-[var(--tg-border)] mb-10">
+                <div class="list-item" onclick="app.toggleTheme()">
+                    <i class="fa-solid fa-moon text-indigo-500 w-8 text-2xl"></i>
+                    <div class="flex-1 font-bold text-lg">Ночная тема</div>
+                    <div id="theme-switch" class="switch-container">
+                        <div class="switch-handle"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center px-10">
+                <button onclick="app.resetAll()" class="text-red-500/20 text-xs font-bold uppercase tracking-widest">Стереть все данные</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'tg_pro_final_v1';
+    const ACTIVE_KEY = 'tg_pro_active_v1';
+    const GOLD_KEY = 'tg_pro_gold_v1';
+
+    const DB = {
+        get accounts() { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; },
+        set accounts(val) { localStorage.setItem(STORAGE_KEY, JSON.stringify(val)); },
+        get activeId() { return localStorage.getItem(ACTIVE_KEY); },
+        set activeId(val) { localStorage.setItem(ACTIVE_KEY, val); },
+        get goldMode() { return localStorage.getItem(GOLD_KEY) === 'true'; },
+        set goldMode(val) { localStorage.setItem(GOLD_KEY, val); }
+    };
+
+    const state = { history: ['page-auth'], currentPartnerId: null };
+
+    const app = {
+        generateRandomID() {
+            const r = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('auth-id').value = `PRO-${r}`;
+        },
+
+        createAccount() {
+            const name = document.getElementById('auth-name').value.trim();
+            const id = document.getElementById('auth-id').value.trim();
+            if(!name || !id) return ui.showToast("Введите имя и ID");
+            
+            let accs = DB.accounts;
+            if(accs.some(a => a.id === id)) return ui.showToast("Этот ID уже занят");
+            
+            const newAcc = { id, name, chats: {}, premium: false, theme: 'light' };
+            accs.push(newAcc);
+            DB.accounts = accs;
+            this.login(id);
+        },
+
+        login(id) {
+            DB.activeId = id;
+            ui.navigate('page-main');
+            this.sync();
+        },
+
+        logout() {
+            DB.activeId = null;
+            ui.navigate('page-auth');
+        },
+
+        getMe() {
+            return DB.accounts.find(a => a.id === DB.activeId);
+        },
+
+        sync() {
+            const me = this.getMe();
+            if(!me) {
+                ui.renderAuthList();
+                return;
+            }
+
+            ui.applyTheme(me.theme);
+            ui.renderAuthList();
+            ui.renderSettingsAccounts();
+            ui.renderChats();
+
+            // Profile Update
+            document.getElementById('settings-name').innerHTML = `${me.name} ${me.premium ? '<i class="fa-solid fa-certificate text-blue-500 text-sm"></i>' : ''}`;
+            document.getElementById('settings-id').innerText = `@${me.id}`;
+            
+            const avatarWrap = document.getElementById('settings-avatar-wrap');
+            avatarWrap.className = `w-32 h-32 mb-6 ${me.premium ? 'premium-border' : ''}`;
+            avatarWrap.innerHTML = `<div class="w-full h-full rounded-full flex items-center justify-center text-5xl text-white font-black" style="background:${this.getColor(me.name)}">${me.name[0]}</div>`;
+
+            // Premium Logic
+            const statusText = document.getElementById('premium-status-text');
+            const badgeContainer = document.getElementById('premium-badge-container');
+            const goldSection = document.getElementById('gold-interface-item');
+
+            if(me.premium) {
+                statusText.innerText = "Активно";
+                statusText.className = "text-sm font-black gold-text";
+                badgeContainer.innerHTML = '<span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase shadow-lg premium-glow">Premium ✨</span>';
+                goldSection.classList.remove('hidden');
+            } else {
+                statusText.innerText = "Купить";
+                statusText.className = "text-sm font-bold text-gray-300";
+                badgeContainer.innerHTML = '';
+                goldSection.classList.add('hidden');
+                DB.goldMode = false;
+            }
+            ui.applyGoldMode();
+        },
+
+        buyPremium() {
+            let accs = DB.accounts;
+            const me = this.getMe();
+            const idx = accs.findIndex(a => a.id === me.id);
+            if(me.premium) return ui.showToast("У вас уже есть Premium ✨");
+
+            if(confirm("Разблокировать возможности Premium?\n\n- Золотой интерфейс\n- Значок верификации\n- Анимированная рамка")) {
+                accs[idx].premium = true;
+                DB.accounts = accs;
+                ui.showToast("Premium активирован! ✨👑");
+                this.sync();
+            }
+        },
+
+        toggleGoldMode() {
+            DB.goldMode = !DB.goldMode;
+            ui.applyGoldMode();
+            ui.showToast(DB.goldMode ? "Золотой интерфейс активирован! 👑" : "Обычный интерфейс");
+        },
+
+        getColor(name) {
+            const colors = ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55'];
+            let h = 0; for(let i=0; i<name.length; i++) h += name.charCodeAt(i);
+            return colors[h % colors.length];
+        },
+
+        searchUsers() {
+            const q = document.getElementById('global-search-input').value.toLowerCase().trim();
+            const res = document.getElementById('search-results');
+            if(!q) return res.innerHTML = '';
+            
+            const users = DB.accounts.filter(u => u.id.toLowerCase().includes(q) && u.id !== DB.activeId);
+            res.innerHTML = users.map(u => `
+                <div class="list-item" onclick="ui.openChat('${u.id}')">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-xl ${u.premium ? 'premium-border' : ''}" style="background:${this.getColor(u.name)}">${u.name[0]}</div>
+                    <div class="flex-1">
+                        <div class="font-bold text-lg flex items-center gap-1">${u.name} ${u.premium ? '⭐' : ''}</div>
+                        <div class="text-sm opacity-50">@${u.id}</div>
+                    </div>
+                </div>`).join('');
+        },
+
+        sendText() {
+            const input = document.getElementById('chat-input');
+            const val = input.value.trim();
+            if(!val) return;
+            
+            let accs = DB.accounts;
+            const me = this.getMe();
+            const pid = state.currentPartnerId;
+            const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            
+            const msg = { sender: me.id, content: val, time };
+            
+            const meIdx = accs.findIndex(a => a.id === me.id);
+            if(!accs[meIdx].chats[pid]) accs[meIdx].chats[pid] = [];
+            accs[meIdx].chats[pid].push(msg);
+
+            if(pid !== 'saved') {
+                const partnerIdx = accs.findIndex(a => a.id === pid);
+                if(partnerIdx !== -1) {
+                    if(!accs[partnerIdx].chats[me.id]) accs[partnerIdx].chats[me.id] = [];
+                    accs[partnerIdx].chats[me.id].push(msg);
+                }
+            }
+            
+            DB.accounts = accs;
+            input.value = '';
+            input.focus();
+            ui.renderChatContent();
+            ui.renderChats();
+        },
+
+        toggleTheme() {
+            let accs = DB.accounts;
+            const me = this.getMe();
+            const idx = accs.findIndex(a => a.id === me.id);
+            accs[idx].theme = me.theme === 'light' ? 'dark' : 'light';
+            DB.accounts = accs;
+            this.sync();
+        },
+
+        resetAll() {
+            if(confirm("Это удалит ВСЕ аккаунты и сообщения. Продолжить?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    };
+
+    const ui = {
+        navigate(id) {
+            const cur = state.history[state.history.length-1];
+            if(cur === id) return;
+            document.getElementById(cur).classList.replace('page-active', 'page-hidden-left');
+            document.getElementById(id).classList.remove('page-hidden-right', 'page-hidden-left');
+            document.getElementById(id).classList.add('page-active');
+            state.history.push(id);
+            app.sync();
+        },
+        back() {
+            if(state.history.length <= 1) return;
+            const cur = state.history.pop();
+            const prev = state.history[state.history.length-1];
+            document.getElementById(cur).classList.replace('page-active', 'page-hidden-right');
+            document.getElementById(prev).classList.remove('page-hidden-left');
+            document.getElementById(prev).classList.add('page-active');
+            app.sync();
+        },
+        applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const sw = document.getElementById('theme-switch');
+            if(sw) sw.className = `switch-container ${theme === 'dark' ? 'active' : ''}`;
+        },
+        applyGoldMode() {
+            document.body.setAttribute('data-gold', DB.goldMode);
+            const sw = document.getElementById('gold-switch');
+            if(sw) sw.className = `switch-container ${DB.goldMode ? 'active' : ''}`;
+        },
+        showToast(text) {
+            const t = document.getElementById('toast');
+            t.innerText = text;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        },
+        renderAuthList() {
+            const container = document.getElementById('auth-account-list');
+            container.innerHTML = DB.accounts.map(a => `
+                <div class="p-4 bg-white dark:bg-zinc-800 rounded-2xl flex items-center gap-4 cursor-pointer shadow-sm active:scale-95 transition-all" onclick="app.login('${a.id}')">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-black" style="background:${app.getColor(a.name)}">${a.name[0]}</div>
+                    <div class="flex-1 font-bold">${a.name} ${a.premium ? '⭐' : ''}</div>
+                    ${a.id === DB.activeId ? '<i class="fa-solid fa-check text-blue-500"></i>' : ''}
+                </div>`).join('');
+        },
+        renderSettingsAccounts() {
+            const container = document.getElementById('settings-account-list');
+            container.innerHTML = DB.accounts.map(a => `
+                <div class="list-item" onclick="app.login('${a.id}')">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-black ${a.premium ? 'premium-border' : ''}" style="background:${app.getColor(a.name)}">${a.name[0]}</div>
+                    <div class="flex-1 font-bold text-lg">${a.name} ${a.premium ? '⭐' : ''}</div>
+                    ${a.id === DB.activeId ? '<i class="fa-solid fa-circle-check text-blue-500 text-xl"></i>' : '<i class="fa-solid fa-chevron-right text-gray-200"></i>'}
+                </div>`).join('');
+        },
+        openChat(pid) {
+            state.currentPartnerId = pid;
+            const p = pid === 'saved' ? { name: 'Избранное' } : (DB.accounts.find(a => a.id === pid) || { name: 'Пользователь' });
+            document.getElementById('chat-user-name').innerText = p.name;
+            const av = document.getElementById('chat-user-avatar');
+            av.style.background = app.getColor(p.name);
+            av.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white font-bold">${p.name[0]}</div>`;
+            this.navigate('page-chat');
+            this.renderChatContent();
+        },
+        renderChats() {
+            const me = app.getMe();
+            if(!me) return;
+            const container = document.getElementById('dynamic-chats');
+            const chatIds = Object.keys(me.chats);
+            container.innerHTML = chatIds.filter(id => id !== 'saved').map(pid => {
+                const p = DB.accounts.find(a => a.id === pid) || { name: 'Удаленный аккаунт' };
+                const last = me.chats[pid][me.chats[pid].length - 1];
+                return `
+                    <div class="list-item" onclick="ui.openChat('${pid}')">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-black ${p.premium ? 'premium-border' : ''}" style="background:${app.getColor(p.name)}">${p.name[0]}</div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center"><span class="font-bold text-lg">${p.name}</span><span class="text-[10px] opacity-40 font-bold">${last?.time || ''}</span></div>
+                            <div class="text-sm opacity-50 truncate">${last?.content || ''}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+        },
+        renderChatContent() {
+            const me = app.getMe();
+            const msgs = me.chats[state.currentPartnerId] || [];
+            document.getElementById('chat-messages').innerHTML = msgs.map(m => `
+                <div class="msg-bubble ${m.sender === me.id ? 'msg-sent' : 'msg-received'} animate-fadeIn">
+                    <div>${m.content}</div><div class="text-[9px] opacity-30 text-right mt-1 font-bold">${m.time}</div>
+                </div>`).join('');
+            const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
+        }
+    };
+
+    window.onload = () => {
+        if(DB.activeId) {
+            app.sync();
+            ui.navigate('page-main');
+        } else {
+            ui.renderAuthList();
+        }
+    };
+</script>
+</body>
+</html>
+
